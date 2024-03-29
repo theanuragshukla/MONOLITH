@@ -1,16 +1,21 @@
 package com.anurag.monolith
 
 import Add
+import Break
+import Continue
 import Dec
 import Div
+import Done
 import Fi
 import Instruction
 import Flops
 import If
+import Jump
 import Mod
 import Mov
 import Mul
 import Sub
+import While
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -39,22 +44,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-fun parseInstruction(instructionString: String): Instruction {
-    val parts = instructionString.trim().split("\\s+".toRegex())
-    return when (parts[0]) {
-        "ADD" -> Add(parts[1], parts[2], parts[3])
-        "DEC" -> Dec(parts[1], parts[2].toDouble())
-        "MOV" -> Mov(parts[1], parts[2].toDouble())
-        "MODE" -> Flops(parts[1].toBooleanStrict())
-        "SUB" -> Sub(parts[1], parts[2], parts[3])
-        "MUL" -> Mul(parts[1], parts[2], parts[3])
-        "DIV" -> Div(parts[1], parts[2], parts[3])
-        "MOD" -> Mod(parts[1], parts[2], parts[3])
-        "IF" -> If(parts[1], parts[2], parts[3])
-        "FI" -> Fi
-        else -> throw IllegalArgumentException("Invalid instruction: ${parts[0]}")
-    }
-}
     @Composable
     fun Demo() {
         val interpreter = remember {
@@ -64,16 +53,16 @@ fun parseInstruction(instructionString: String): Instruction {
         MOV a 5
         MOV b 10
         DEC c 0
-        IF a > b
+        IF a > b :: label1 
         SUB c a b
         FI
-        IF b > a
+        IF b > a :: label2
         SUB c b a
+        FI
     """.trimIndent()
 
-        val instructions = programString.lines().map { parseInstruction(it) }
-        for (instruction in instructions) {
-            interpreter.execute(instruction)
-        }
+        interpreter.setAlgorithm(programString)
+        interpreter.start()
+        println(interpreter.labels)
         println(interpreter.registers)
     }
