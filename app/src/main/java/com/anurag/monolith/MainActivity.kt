@@ -50,19 +50,19 @@ class MainActivity : ComponentActivity() {
             InterpreterViewModel()
         }
         val programString = """
-        MOV a 5
-        MOV b 10
-        DEC c 0
-        IF a > b :: label1 
-        SUB c a b
-        FI
-        IF b > a :: label2
-        SUB c b a
-        FI
+        DEC a 0
+        DEC i 0
+        WHILE i < 10
+        DEC j 0
+        WHILE j < 10
+        ADD a a 1
+        ADD j j 1
+        DONE
+        ADD i i 1
+        DONE
+        HALT
     """.trimIndent()
 
         interpreter.setAlgorithm(programString)
         interpreter.start()
-        println(interpreter.labels)
-        println(interpreter.registers)
     }

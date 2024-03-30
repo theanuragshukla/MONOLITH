@@ -9,6 +9,7 @@ import Done
 import Fi
 import Instruction
 import Flops
+import Halt
 import If
 import Jump
 import Mod
@@ -16,18 +17,20 @@ import Mov
 import Mul
 import Sub
 import While
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import java.util.Stack
 
 class InterpreterViewModel : ViewModel() {
 
-    var algo = listOf<Instruction>()
+    var parsed = listOf<Instruction>()
+    var algo = mutableListOf<Instruction>()
     var registers = mutableMapOf<String, Number>()
     var flops:Boolean = false
     var skipStmt:Boolean = false
     var ifCount = 0
     var pc = 0
     val labels = mutableMapOf<String, Int>()
-
 
     fun updateFlops(value:Boolean){
         flops = value
@@ -36,8 +39,79 @@ class InterpreterViewModel : ViewModel() {
     fun setAlgorithm(program: String){
         labels.clear()
         val instructions = analyseProgram(program.lines())
-        algo = instructions.map { parseInstruction(it) }
+        parsed = instructions.map { parseInstruction(it) }
+        pc = 0
+        convertToTAC()
     }
+
+    fun convertToTAC(){
+        while (pc < parsed.size){
+            parseInstruction(parsed[pc++])
+        }
+    }
+
+    fun whileToNotIf(whileCondition: While): If {
+        val operator = when (whileCondition.operator) {
+            ">" -> "<="
+            "<" -> ">="
+            "=" -> "!="
+            ">=" -> "<"
+            "<=" -> ">"
+            "!=" -> "="
+            else -> throw IllegalArgumentException("Invalid operator: ${whileCondition.operator}")
+        }
+        return If(whileCondition.operand1, operator, whileCondition.operand2)
+    }
+    fun parseWhileLoop() {
+        val startLabel = Helper.randomString(8)
+        val endLabel = Helper.randomString(8)
+        val whileCondition = parsed[pc++] as? While ?: return
+        addLabel(startLabel)
+        appendAlgo(whileToNotIf(whileCondition))
+        appendAlgo(Jump(endLabel))
+        appendAlgo(Fi)
+
+        while (pc < parsed.size) {
+            val ins = parsed[pc++]
+            when (ins){
+                is Break -> {
+                    appendAlgo(Jump(endLabel))
+                }
+                is Continue -> {
+                    appendAlgo(Jump(startLabel))
+                }
+                is Done -> {
+                    appendAlgo(Jump(startLabel))
+                    addLabel(endLabel)
+                    return
+                }
+                else -> {
+                    parseInstruction(ins)
+                }
+            }
+        }
+    }
+
+    fun addLabel(label: String) {
+        labels[label] = algo.size
+    }
+
+    fun parseInstruction(s: Instruction){
+        when (s) {
+            is While -> {
+                pc--
+                parseWhileLoop()
+            }
+            else -> {
+                appendAlgo(s)
+            }
+        }
+    }
+    fun appendAlgo(line: Instruction){
+        Log.d("ALGO", line.toString())
+        algo.add(line)
+    }
+
 
     fun analyseProgram(program: List<String>): List<String> {
         return program.mapIndexed { idx, s ->
@@ -49,6 +123,7 @@ class InterpreterViewModel : ViewModel() {
         }
     }
     fun execute(instruction: Instruction) {
+        Log.d("EXEC", instruction.toString())
         if(skipStmt && instruction !is Fi)return
         when (instruction) {
             is Add -> {
@@ -109,8 +184,11 @@ class InterpreterViewModel : ViewModel() {
                 if(idx!=-1){
                     pc = idx
                 }else {
-                    throw Exception("Illegal Jump Instruction. Lablel $")
+                    throw Exception("Illegal Jump Instruction.")
                 }
+            }
+            is Halt -> {
+                Log.d("HALT", "Program execution finished")
             }
             else -> {}
         }
@@ -154,14 +232,18 @@ class InterpreterViewModel : ViewModel() {
             "DONE" -> Done
             "BREAK" -> Break
             "CONTINUE" -> Continue
-            "JUMP" -> Jump(parts[1].toInt())
+            "JUMP" -> Jump(parts[1])
+            "HALT" -> Halt
             else -> throw IllegalArgumentException("Invalid instruction: ${parts[0]}")
         }
     }
 
     fun start() {
+        pc=0
+        Log.d("INFO", labels.toString())
         while(pc<algo.size){
             execute(algo[pc++])
         }
+        Log.d("INFO", registers.toString())
     }
 }
