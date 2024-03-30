@@ -52,14 +52,16 @@ class MainActivity : ComponentActivity() {
         val programString = """
         DEC a 0
         DEC i 0
-        WHILE i < 10
-        DEC j 0
-        WHILE j < 10
-        ADD a a 1
-        ADD j j 1
-        DONE
+        IF a > 10
+        ADD a a a
+        ELSE
+        IF i < 6
         ADD i i 1
-        DONE
+        ELSE 
+        ADD i i 2
+        FI
+        SUB a a 5
+        FI
         HALT
     """.trimIndent()
 
