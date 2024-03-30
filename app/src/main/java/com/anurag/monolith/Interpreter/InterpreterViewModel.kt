@@ -30,34 +30,11 @@ class InterpreterViewModel : ViewModel() {
     var ifCount = 0
     var pc = 0
     val labels = mutableMapOf<String, Int>()
-    fun parseInstruction(instructionString: String): Instruction {
-        val parts = instructionString.trim().split("\\s+".toRegex())
-        return when (parts[0]) {
-            "ADD" -> Add(parts[1], parts[2], parts[3])
-            "DEC" -> Dec(parts[1], parts[2].toDouble())
-            "MOV" -> Mov(parts[1], parts[2].toDouble())
-            "MODE" -> Flops(parts[1].toBooleanStrict())
-            "SUB" -> Sub(parts[1], parts[2], parts[3])
-            "MUL" -> Mul(parts[1], parts[2], parts[3])
-            "DIV" -> Div(parts[1], parts[2], parts[3])
-            "MOD" -> Mod(parts[1], parts[2], parts[3])
-            "IF" -> If(parts[1], parts[2], parts[3])
-            "ELSE" -> Else
-            "FI" -> Fi
-            "WHILE" -> While(parts[1], parts[2], parts[3])
-            "DONE" -> Done
-            "BREAK" -> Break
-            "CONTINUE" -> Continue
-            "JUMP" -> Jump(parts[1])
-            "HALT" -> Halt
-            else -> throw IllegalArgumentException("Invalid instruction: ${parts[0]}")
-        }
-    }
 
     fun setAlgorithm(program: String) {
         labels.clear()
         val instructions = analyseProgram(program.lines())
-        parsed = instructions.map { parseInstruction(it) }
+        parsed = instructions.map { Parser.parseInstruction(it) }
         pc = 0
         convertToTAC()
     }
@@ -101,7 +78,7 @@ class InterpreterViewModel : ViewModel() {
         val endLabel = Helper.randomString(8)
         val whileCondition = parsed[pc++] as? While ?: return
         addLabel(startLabel)
-        appendAlgo(whileToNotIf(whileCondition))
+        appendAlgo(TACHelper.whileToNotIf(whileCondition))
         appendAlgo(Jump(endLabel))
         appendAlgo(Fi)
 
@@ -133,7 +110,7 @@ class InterpreterViewModel : ViewModel() {
         val elseLabel = Helper.randomString(8)
         val endLabel = Helper.randomString(8)
         val IfCondition = parsed[pc++] as? If ?: return
-        appendAlgo(ifToNotIf(IfCondition))
+        appendAlgo(TACHelper.ifToNotIf(IfCondition))
         appendAlgo(Jump(elseLabel))
         appendAlgo(Fi)
         while (pc < parsed.size) {
@@ -242,7 +219,6 @@ class InterpreterViewModel : ViewModel() {
             else -> {}
         }
     }
-
     fun evaluateIf(stmt: If): Boolean {
         val op1 = resolveOperand(stmt.operand1)
         val op2 = resolveOperand(stmt.operand2)
@@ -256,7 +232,6 @@ class InterpreterViewModel : ViewModel() {
             else -> throw IllegalArgumentException("Invalid operator: ${stmt.operator}")
         }
     }
-
     private fun resolveOperand(operand: String): Number {
         return try {
             operand.toDouble()
@@ -264,43 +239,15 @@ class InterpreterViewModel : ViewModel() {
             registers.getOrDefault(operand, 0)
         }
     }
-
     fun appendAlgo(line: Instruction) {
         Log.d("ALGO", line.toString())
         algo.add(line)
     }
-
     fun addLabel(label: String) {
         labels[label] = algo.size
     }
-
     fun updateFlops(value: Boolean) {
         flops = value
-    }
-
-    fun whileToNotIf(whileCondition: While): If {
-        val operator = when (whileCondition.operator) {
-            ">" -> "<="
-            "<" -> ">="
-            "=" -> "!="
-            ">=" -> "<"
-            "<=" -> ">"
-            "!=" -> "="
-            else -> throw IllegalArgumentException("Invalid operator: ${whileCondition.operator}")
-        }
-        return If(whileCondition.operand1, operator, whileCondition.operand2)
-    }
-    fun ifToNotIf(ifCondition: If): If {
-        val operator = when (ifCondition.operator) {
-            ">" -> "<="
-            "<" -> ">="
-            "=" -> "!="
-            ">=" -> "<"
-            "<=" -> ">"
-            "!=" -> "="
-            else -> throw IllegalArgumentException("Invalid operator: ${ifCondition.operator}")
-        }
-        return If(ifCondition.operand1, operator, ifCondition.operand2)
     }
     fun start() {
         pc = 0
