@@ -1,9 +1,11 @@
 package com.anurag.monolith.Interpreter
 
+import AccessArray
 import Add
 import Break
 import Continue
 import Dec
+import DeclareArray
 import Div
 import Done
 import Else
@@ -17,15 +19,17 @@ import Mod
 import Mov
 import Mul
 import Sub
+import UpdateArray
 import While
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.anurag.monolith.Interpreter.TACHelper
+import com.anurag.monolith.Interpreter.Helper.arrayMapToString
 
 class InterpreterViewModel : ViewModel() {
     var parsed = listOf<Instruction>()
     var algo = mutableListOf<Instruction>()
     var registers = mutableMapOf<String, Number>()
+    val arrayStack = mutableMapOf<String, Array<Number>>()
     var flops: Boolean = false
     var skipStmt: Boolean = false
     var ifCount = 0
@@ -34,6 +38,7 @@ class InterpreterViewModel : ViewModel() {
 
     fun setAlgorithm(program: String) {
         labels.clear()
+        registers.clear()
         val instructions = analyseProgram(program.lines())
         parsed = instructions.map { Parser.parseInstruction(it) }
         pc = 0
@@ -216,7 +221,19 @@ class InterpreterViewModel : ViewModel() {
                 Log.d("HALT", "Program execution finished")
                 pc = algo.size
             }
-
+            is DeclareArray -> arrayStack[instruction.arrayName] = Array(instruction.size) { 0 }
+            is AccessArray -> {
+                val array = arrayStack[instruction.arrayName]  ?: return
+                val value = array.getOrNull(resolveOperand(instruction.index).toInt()) ?: 0
+                registers[instruction.destination] = value
+            }
+            is UpdateArray -> {
+                val array = arrayStack[instruction.arrayName] ?: return
+                val idx = resolveOperand(instruction.index).toInt()
+                if ( idx in array.indices) {
+                    array[idx] = resolveOperand(instruction.value)
+                }
+            }
             else -> {}
         }
     }
@@ -257,5 +274,6 @@ class InterpreterViewModel : ViewModel() {
             execute(algo[pc++])
         }
         Log.d("INFO", registers.toString())
+        Log.d("INFO", arrayMapToString(arrayStack))
     }
 }

@@ -50,18 +50,14 @@ class MainActivity : ComponentActivity() {
             InterpreterViewModel()
         }
         val programString = """
-        DEC a 0
+        DEC_ARR a 5
         DEC i 0
-        IF a > 10
-        ADD a a a
-        ELSE
-        IF i < 6
-        ADD i i 1
-        ELSE 
-        ADD i i 2
-        FI
-        SUB a a 5
-        FI
+        WHILE i < 5
+        SET_ARR a i i
+        ADD i 1 i
+        DONE
+        ARR a 4 b
+        SET_ARR a 6 9
         HALT
     """.trimIndent()
 

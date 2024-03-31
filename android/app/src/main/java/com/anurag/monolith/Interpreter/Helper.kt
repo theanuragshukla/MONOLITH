@@ -1,5 +1,7 @@
 package com.anurag.monolith.Interpreter
 
+import android.util.Log
+
 object Helper {
     fun reveseOperator(str: String): String{
         return when (str) {
@@ -20,4 +22,19 @@ object Helper {
             .map(charPool::get)
             .joinToString("")
     }
+    fun arrayMapToString(map: Map<String, Array<Number>>):String {
+        val sb = StringBuilder("{")
+
+        for ((key, value) in map) {
+            sb.append("$key=[${value.joinToString()}], ")
+        }
+        if (sb.length > 1) {
+            sb.delete(sb.length - 2, sb.length)
+        }
+
+        sb.append("}")
+
+        return sb.toString()
+    }
+
 }

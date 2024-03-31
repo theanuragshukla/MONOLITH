@@ -1,10 +1,12 @@
 package com.anurag.monolith.Interpreter
 
+import AccessArray
 import Instruction
 import Add
 import Break
 import Continue
 import Dec
+import DeclareArray
 import Div
 import Done
 import Else
@@ -17,6 +19,7 @@ import Mod
 import Mov
 import Mul
 import Sub
+import UpdateArray
 import While
 
 object Parser {
@@ -40,6 +43,10 @@ object Parser {
             "CONTINUE" -> Continue
             "JUMP" -> Jump(parts[1])
             "HALT" -> Halt
+            "DEC_ARR" -> DeclareArray(parts[1], parts[2].toInt())
+            "ARR" -> AccessArray(parts[1], parts[2], parts[3])
+            "SET_ARR" -> UpdateArray(parts[1], parts[2], parts[3])
+
             else -> throw IllegalArgumentException("Invalid instruction: ${parts[0]}")
         }
     }
